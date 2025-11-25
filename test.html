@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TodoList API 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .response.show {
+            display: block;
+        }
+
+        .response.success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .response.error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+
+        .response pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .token-display {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff3cd;
+            border-radius: 5px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.online {
+            background: #28a745;
+            box-shadow: 0 0 10px #28a745;
+        }
+
+        .status-indicator.offline {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 TodoList API 테스트</h1>
+
+        <!-- Health Check -->
+        <div class="card">
+            <h2><span class="status-indicator" id="statusIndicator"></span>서버 상태</h2>
+            <button onclick="checkHealth()">서버 상태 확인</button>
+            <div id="healthResponse" class="response"></div>
+        </div>
+
+        <!-- Signup -->
+        <div class="card">
+            <h2>회원가입</h2>
+            <div class="form-group">
+                <label>이메일</label>
+                <input type="email" id="signupEmail" placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label>비밀번호</label>
+                <input type="password" id="signupPassword" placeholder="최소 6자">
+            </div>
+            <button onclick="signup()">회원가입</button>
+            <div id="signupResponse" class="response"></div>
+        </div>
+
+        <!-- Login -->
+        <div class="card">
+            <h2>로그인</h2>
+            <div class="form-group">
+                <label>이메일</label>
+                <input type="email" id="loginEmail" placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label>비밀번호</label>
+                <input type="password" id="loginPassword" placeholder="비밀번호">
+            </div>
+            <button onclick="login()">로그인</button>
+            <div id="loginResponse" class="response"></div>
+        </div>
+
+        <!-- Get Me -->
+        <div class="card">
+            <h2>내 정보 조회 (JWT 인증 필요)</h2>
+            <div class="form-group">
+                <label>JWT 토큰</label>
+                <input type="text" id="jwtToken" placeholder="로그인 후 자동으로 입력됩니다">
+            </div>
+            <button onclick="getMe()">내 정보 조회</button>
+            <div id="meResponse" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = '';
+
+        // Check server health
+        async function checkHealth() {
+            const responseDiv = document.getElementById('healthResponse');
+            const indicator = document.getElementById('statusIndicator');
+            
+            try {
+                const response = await fetch('http://localhost:3000/health');
+                const data = await response.json();
+                
+                responseDiv.className = 'response show success';
+                responseDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                indicator.className = 'status-indicator online';
+            } catch (error) {
+                responseDiv.className = 'response show error';
+                responseDiv.innerHTML = '<pre>서버 연결 실패: ' + error.message + '</pre>';
+                indicator.className = 'status-indicator offline';
+            }
+        }
+
+        // Signup
+        async function signup() {
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const responseDiv = document.getElementById('signupResponse');
+
+            if (!email || !password) {
+                responseDiv.className = 'response show error';
+                responseDiv.innerHTML = '<pre>이메일과 비밀번호를 입력해주세요.</pre>';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    responseDiv.className = 'response show success';
+                    responseDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    
+                    if (data.data && data.data.token) {
+                        currentToken = data.data.token;
+                        document.getElementById('jwtToken').value = currentToken;
+                        responseDiv.innerHTML += '<div class="token-display">✅ JWT 토큰이 자동으로 저장되었습니다!</div>';
+                    }
+                } else {
+                    responseDiv.className = 'response show error';
+                    responseDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                responseDiv.className = 'response show error';
+                responseDiv.innerHTML = '<pre>요청 실패: ' + error.message + '</pre>';
+            }
+        }
+
+        // Login
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const responseDiv = document.getElementById('loginResponse');
+
+            if (!email || !password) {
+                responseDiv.className = 'response show error';
+                responseDiv.innerHTML = '<pre>이메일과 비밀번호를 입력해주세요.</pre>';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    responseDiv.className = 'response show success';
+                    responseDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    
+                    if (data.data && data.data.token) {
+                        currentToken = data.data.token;
+                        document.getElementById('jwtToken').value = currentToken;
+                        responseDiv.innerHTML += '<div class="token-display">✅ JWT 토큰이 자동으로 저장되었습니다!</div>';
+                    }
+                } else {
+                    responseDiv.className = 'response show error';
+                    responseDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                responseDiv.className = 'response show error';
+                responseDiv.innerHTML = '<pre>요청 실패: ' + error.message + '</pre>';
+            }
+        }
+
+        // Get current user
+        async function getMe() {
+            const token = document.getElementById('jwtToken').value || currentToken;
+            const responseDiv = document.getElementById('meResponse');
+
+            if (!token) {
+                responseDiv.className = 'response show error';
+                responseDiv.innerHTML = '<pre>먼저 로그인하거나 JWT 토큰을 입력해주세요.</pre>';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    responseDiv.className = 'response show success';
+                    responseDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    responseDiv.className = 'response show error';
+                    responseDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                responseDiv.className = 'response show error';
+                responseDiv.innerHTML = '<pre>요청 실패: ' + error.message + '</pre>';
+            }
+        }
+
+        // Check health on page load
+        window.addEventListener('load', checkHealth);
+    </script>
+</body>
+</html>

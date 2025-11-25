@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TodoList - 로그인</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .login-header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+
+        .login-body {
+            padding: 40px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input::placeholder {
+            color: #999;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-signup {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-signup:hover {
+            background: #f8f9ff;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .loading {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: '.';
+            }
+
+            40% {
+                content: '..';
+            }
+
+            60%,
+            100% {
+                content: '...';
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>📝 TodoList</h1>
+            <p>할 일 관리를 시작하세요</p>
+        </div>
+
+        <div class="login-body">
+            <div id="alert" class="alert"></div>
+
+            <!-- Login Form -->
+            <div id="loginForm">
+                <div class="form-group">
+                    <label for="loginUsername">사용자명</label>
+                    <input type="text" id="loginUsername" placeholder="사용자명을 입력하세요" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">비밀번호</label>
+                    <input type="password" id="loginPassword" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+                </div>
+                <div class="btn-group">
+                    <button class="btn-login" onclick="login()">로그인</button>
+                    <button class="btn-signup" onclick="showSignupForm()">회원가입</button>
+                </div>
+            </div>
+
+            <!-- Signup Form (Hidden by default) -->
+            <div id="signupForm" style="display: none;">
+                <div class="form-group">
+                    <label for="signupUsername">사용자명</label>
+                    <input type="text" id="signupUsername" placeholder="3자 이상, 영문/숫자/밑줄만 가능" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">비밀번호</label>
+                    <input type="password" id="signupPassword" placeholder="최소 6자 이상" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="signupPasswordConfirm">비밀번호 확인</label>
+                    <input type="password" id="signupPasswordConfirm" placeholder="비밀번호를 다시 입력하세요"
+                        autocomplete="new-password">
+                </div>
+                <div class="btn-group">
+                    <button class="btn-login" onclick="signup()">가입하기</button>
+                    <button class="btn-signup" onclick="showLoginForm()">로그인으로</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api/auth';
+
+        // Check if already logged in
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                // Already logged in, redirect to todo page
+                window.location.href = 'todo.html';
+            }
+        });
+
+        // Show alert message
+        function showAlert(message, type = 'error') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+
+            setTimeout(() => {
+                alert.className = 'alert';
+            }, 5000);
+        }
+
+        // Show signup form
+        function showSignupForm() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('signupForm').style.display = 'block';
+            document.getElementById('alert').className = 'alert';
+        }
+
+        // Show login form
+        function showLoginForm() {
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('alert').className = 'alert';
+        }
+
+        // Login function
+        async function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                showAlert('사용자명과 비밀번호를 입력해주세요.');
+                return;
+            }
+
+            const button = event.target;
+            button.classList.add('loading');
+            button.textContent = '로그인 중';
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('로그인 성공! 환영합니다.', 'success');
+
+                    // Save token to localStorage
+                    localStorage.setItem('token', data.data.token);
+                    localStorage.setItem('username', data.data.username);
+
+                    // Redirect to todo page
+                    setTimeout(() => {
+                        window.location.href = 'todo.html';
+                    }, 1000);
+                } else {
+                    showAlert(data.message || '로그인에 실패했습니다.');
+                }
+            } catch (error) {
+                showAlert('서버 연결에 실패했습니다. 서버가 실행 중인지 확인해주세요.');
+            } finally {
+                button.classList.remove('loading');
+                button.textContent = '로그인';
+            }
+        }
+
+        // Signup function
+        async function signup() {
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+
+            if (!username || !password || !passwordConfirm) {
+                showAlert('모든 필드를 입력해주세요.');
+                return;
+            }
+
+            if (password !== passwordConfirm) {
+                showAlert('비밀번호가 일치하지 않습니다.');
+                return;
+            }
+
+            if (username.length < 3) {
+                showAlert('사용자명은 최소 3자 이상이어야 합니다.');
+                return;
+            }
+
+            if (password.length < 6) {
+                showAlert('비밀번호는 최소 6자 이상이어야 합니다.');
+                return;
+            }
+
+            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                showAlert('사용자명은 영문, 숫자, 밑줄(_)만 사용할 수 있습니다.');
+                return;
+            }
+
+            const button = event.target;
+            button.classList.add('loading');
+            button.textContent = '가입 중';
+
+            try {
+                const response = await fetch(`${API_URL}/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('회원가입 성공! 로그인해주세요.', 'success');
+
+                    // Clear form and switch to login
+                    document.getElementById('signupUsername').value = '';
+                    document.getElementById('signupPassword').value = '';
+                    document.getElementById('signupPasswordConfirm').value = '';
+
+                    setTimeout(() => {
+                        showLoginForm();
+                        document.getElementById('loginUsername').value = username;
+                    }, 1500);
+                } else {
+                    if (data.errors) {
+                        showAlert(data.errors.map(e => e.message).join('\n'));
+                    } else {
+                        showAlert(data.message || '회원가입에 실패했습니다.');
+                    }
+                }
+            } catch (error) {
+                showAlert('서버 연결에 실패했습니다. 서버가 실행 중인지 확인해주세요.');
+            } finally {
+                button.classList.remove('loading');
+                button.textContent = '가입하기';
+            }
+        }
+
+        // Handle Enter key
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const loginForm = document.getElementById('loginForm');
+                const signupForm = document.getElementById('signupForm');
+
+                if (loginForm.style.display !== 'none') {
+                    login();
+                } else if (signupForm.style.display !== 'none') {
+                    signup();
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
